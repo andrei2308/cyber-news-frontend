@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom';
 import Login from '../pages/Login';
+import Feed from '../pages/Feed';
 import ProtectedRoute from '../components/common/ProtectedRoute';
 
 export const router = createBrowserRouter([
@@ -8,10 +9,10 @@ export const router = createBrowserRouter([
         children: [
             { index: true, element: <Login /> },
             {
-                path: 'dashboard',
+                path: 'feed',
                 element: (
                     <ProtectedRoute>
-                        <div>Dashboard Content</div>
+                        <Feed />
                     </ProtectedRoute>
                 ),
             },

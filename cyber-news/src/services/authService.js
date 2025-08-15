@@ -50,25 +50,23 @@ export const authService = {
 
     refreshAccessToken: async () => {
         const refreshToken = authService.getRefreshToken();
-
         if (!refreshToken) {
             throw new Error('No refresh token available');
         }
-
         if (authService.isTokenExpired(refreshToken)) {
             authService.removeTokens();
             throw new Error('Refresh token expired');
         }
-
         try {
             const response = await fetch('http://localhost:8080/api/user/refresh-token', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${refreshToken}`
-                }
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    refreshToken: refreshToken
+                })
             });
-
             if (!response.ok) {
                 if (response.status === 401 || response.status === 403) {
                     authService.removeTokens();
@@ -76,22 +74,19 @@ export const authService = {
                 }
                 throw new Error('Failed to refresh token');
             }
-
             const data = await response.json();
 
-            if (data.token) {
-                authService.setToken(data.token);
+            if (data.accessToken) {
+                authService.setToken(data.accessToken);
 
                 if (data.refreshToken) {
                     authService.setRefreshToken(data.refreshToken);
                 }
-
                 if (data.username) {
                     const userData = { username: data.username };
                     authService.setUser(userData);
                 }
-
-                return data.token;
+                return data.accessToken;
             } else {
                 throw new Error('No token received from refresh');
             }
