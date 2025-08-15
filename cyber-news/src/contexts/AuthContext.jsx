@@ -67,6 +67,7 @@ export const AuthProvider = ({ children }) => {
 
             const userData = {
                 username: response.username,
+                id: response.id,
                 tokenType: response.tokenType
             };
 
