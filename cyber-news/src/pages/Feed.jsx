@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/apiService';
 import './Feed.css';
@@ -8,6 +9,7 @@ const Feed = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const { user, logout } = useAuth();
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetchCVEData();
@@ -52,6 +54,19 @@ const Feed = () => {
         return 'low';
     };
 
+    const handleProfileClick = () => {
+        navigate('/profile');
+    };
+
+    const handleUserClick = (username) => {
+        if (username === user?.username) {
+            navigate('/profile');
+        } else {
+            // TODO: Implement logic to view other user's profile
+            console.log(`Clicked on user: ${username}`);
+        }
+    };
+
     if (loading) {
         return (
             <div className="feed-container">
@@ -70,6 +85,9 @@ const Feed = () => {
                     <h1>CVE Security Feed</h1>
                     <div className="header-actions">
                         <span className="welcome-text">Welcome, {user?.username}</span>
+                        <button onClick={handleProfileClick} className="profile-btn">
+                            My Profile
+                        </button>
                         <button onClick={logout} className="logout-btn">
                             Logout
                         </button>
@@ -81,60 +99,67 @@ const Feed = () => {
                 {error && (
                     <div className="error-banner">
                         <p>{error}</p>
-                        Retry
+                        <button onClick={fetchCVEData} className="retry-btn">
+                            Retry
+                        </button>
                     </div>
-                )
-                }
+                )}
 
-                {
-                    cveData.length === 0 && !error ? (
-                        <div className="empty-state">
-                            <h2>No CVE data available</h2>
-                            <p>There are currently no CVE reports to display.</p>
-                        </div>
-                    ) : (
-                        <div className="cve-grid">
-                            {cveData.map((cve, index) => (
-                                <div key={index} className="cve-card">
-                                    <div className="post-header">
-                                        <div className="author-info">
-                                            <div className="author-avatar">
-                                                {cve.authorUsername?.charAt(0).toUpperCase() || 'U'}
-                                            </div>
-                                            <div className="author-details">
-                                                <div className="author-name">{cve.authorUsername}</div>
-                                                <div className="post-time">{formatDate(cve.createdAt)}</div>
-                                            </div>
+                {cveData.length === 0 && !error ? (
+                    <div className="empty-state">
+                        <h2>No CVE data available</h2>
+                        <p>There are currently no CVE reports to display.</p>
+                    </div>
+                ) : (
+                    <div className="cve-grid">
+                        {cveData.map((cve, index) => (
+                            <div key={index} className="cve-card">
+                                <div className="post-header">
+                                    <div className="author-info">
+                                        <div
+                                            className="author-avatar clickable"
+                                            onClick={() => handleUserClick(cve.authorUsername)}
+                                        >
+                                            {cve.authorUsername?.charAt(0).toUpperCase() || 'U'}
                                         </div>
-                                        <div className="post-options">
-                                            <span className={`severity-badge ${getSeverityColor(cve.severity)}`}>
-                                                {getSeverityColor(cve.severity)}
-                                            </span>
+                                        <div className="author-details">
+                                            <div
+                                                className="author-name clickable"
+                                                onClick={() => handleUserClick(cve.authorUsername)}
+                                            >
+                                                {cve.authorUsername}
+                                            </div>
+                                            <div className="post-time">{formatDate(cve.createdAt)}</div>
                                         </div>
                                     </div>
-
-                                    <div className="post-content">
-                                        {cve.title && (
-                                            <h3 className="post-title">{cve.title}</h3>
-                                        )}
-                                        <p className="post-text">
-                                            {cve.description || 'No description available'}
-                                        </p>
-                                    </div>
-
-                                    <div className="post-footer">
-                                        <div className="post-stats">
-                                            <span className="stat-item">🔍 Security Alert</span>
-                                            <span className="stat-item">CVE Report</span>
-                                        </div>
+                                    <div className="post-options">
+                                        <span className={`severity-badge ${getSeverityColor(cve.severity)}`}>
+                                            {getSeverityColor(cve.severity)}
+                                        </span>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                    )
-                }
-            </main >
-        </div >
+
+                                <div className="post-content">
+                                    {cve.title && (
+                                        <h3 className="post-title">{cve.title}</h3>
+                                    )}
+                                    <p className="post-text">
+                                        {cve.description || 'No description available'}
+                                    </p>
+                                </div>
+
+                                <div className="post-footer">
+                                    <div className="post-stats">
+                                        <span className="stat-item">🔍 Security Alert</span>
+                                        <span className="stat-item">CVE Report</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </main>
+        </div>
     );
 };
 
