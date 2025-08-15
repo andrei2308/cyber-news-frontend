@@ -89,7 +89,7 @@ export const AuthProvider = ({ children }) => {
         } finally {
             setUser(null);
             setLoading(false);
-            window.location.href = '/login';
+            window.location.href = '/';
         }
     };
 

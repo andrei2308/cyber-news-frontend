@@ -79,7 +79,7 @@ const Login = () => {
                 };
                 authService.setUser(userData);
 
-                navigate('/dashboard', { replace: true });
+                navigate('/feed', { replace: true });
             } else {
                 throw new Error('Invalid response format from server');
             }
