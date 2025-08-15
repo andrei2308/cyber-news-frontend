@@ -39,7 +39,7 @@
 }
 
 .feed-header {
-    background: white;
+    background: rgb(119, 214, 95);
     border-bottom: 1px solid #e0e0e0;
     padding: 1rem 0;
     position: sticky;
@@ -71,7 +71,7 @@
 }
 
 .welcome-text {
-    color: #666;
+    color: #333;
     font-weight: 500;
 }
 

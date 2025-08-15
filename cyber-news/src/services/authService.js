@@ -83,9 +83,10 @@ export const authService = {
                     authService.setRefreshToken(data.refreshToken);
                 }
                 if (data.username) {
-                    const userData = { username: data.username };
+                    const userData = { username: data.username, id: data.id, tokenType: data.tokenType };
                     authService.setUser(userData);
                 }
+                authService.setToken(data.accessToken);
                 return data.accessToken;
             } else {
                 throw new Error('No token received from refresh');
@@ -158,6 +159,7 @@ export const authService = {
 
                 const userData = {
                     username: data.username,
+                    id: data.id,
                     tokenType: data.tokenType
                 };
                 authService.setUser(userData);

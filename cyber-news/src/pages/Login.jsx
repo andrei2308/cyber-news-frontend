@@ -49,40 +49,9 @@ const Login = () => {
         setFieldErrors({});
 
         try {
-            const response = await fetch('http://localhost:8080/api/user/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData),
-            });
+            await authService.login(formData);
 
-            if (!response.ok) {
-                if (response.status === 401) {
-                    throw new Error('Invalid credentials');
-                } else if (response.status === 500) {
-                    throw new Error('Server error. Please try again later.');
-                } else {
-                    throw new Error('Login failed. Please try again.');
-                }
-            }
-
-            const data = await response.json();
-
-            if (data.token && data.refreshToken) {
-                authService.setToken(data.token);
-                authService.setRefreshToken(data.refreshToken);
-
-                const userData = {
-                    username: data.username,
-                    tokenType: data.tokenType
-                };
-                authService.setUser(userData);
-
-                navigate('/feed', { replace: true });
-            } else {
-                throw new Error('Invalid response format from server');
-            }
+            navigate('/feed', { replace: true });
 
         } catch (err) {
             setError(err.message);
