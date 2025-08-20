@@ -6,18 +6,20 @@ import './Feed.css';
 
 const Feed = () => {
     const [cveData, setCveData] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [dataLoading, setDataLoading] = useState(false);
     const [error, setError] = useState('');
-    const { user, logout } = useAuth();
+    const { user, logout, loading: authLoading } = useAuth();
     const navigate = useNavigate();
 
     useEffect(() => {
-        fetchCVEData();
-    }, []);
+        if (!authLoading) {
+            fetchCVEData();
+        }
+    }, [authLoading]);
 
     const fetchCVEData = async () => {
         try {
-            setLoading(true);
+            setDataLoading(true);
             setError('');
             const data = await apiService.get('/news');
             setCveData(data);
@@ -25,7 +27,7 @@ const Feed = () => {
             setError('Failed to load CVE data. Please try again.');
             console.error('Failed to fetch CVE data:', err);
         } finally {
-            setLoading(false);
+            setDataLoading(false);
         }
     };
 
@@ -55,19 +57,24 @@ const Feed = () => {
     };
 
     const handleProfileClick = () => {
-        navigate('/profile');
+        navigate(`/profile/${user.id}`);
     };
 
-    const handleUserClick = (username) => {
-        if (username === user?.username) {
-            navigate('/profile');
-        } else {
-            // TODO: Implement logic to view other user's profile
-            console.log(`Clicked on user: ${username}`);
-        }
+    const handleUserClick = (userId) => {
+        navigate(`/profile/${userId}`);
     };
 
-    if (loading) {
+    if (authLoading) {
+        return (
+            <div className="feed-container">
+                <div className="loading-container">
+                    <div className="loading-spinner"></div>
+                    <p>Loading...</p>
+                </div>
+            </div>
+        );
+    }
+    if (dataLoading) {
         return (
             <div className="feed-container">
                 <div className="loading-container">
@@ -118,18 +125,18 @@ const Feed = () => {
                                     <div className="author-info">
                                         <div
                                             className="author-avatar clickable"
-                                            onClick={() => handleUserClick(cve.authorUsername)}
+                                            onClick={() => handleUserClick(cve.userId)}
                                         >
                                             {cve.authorUsername?.charAt(0).toUpperCase() || 'U'}
                                         </div>
                                         <div className="author-details">
                                             <div
                                                 className="author-name clickable"
-                                                onClick={() => handleUserClick(cve.authorUsername)}
+                                                onClick={() => handleUserClick(cve.userId)}
                                             >
                                                 {cve.authorUsername}
                                             </div>
-                                            <div className="post-time">{formatDate(cve.createdAt)}</div>
+                                            <div className="post-time">{formatDate(cve.createdDate)}</div>
                                         </div>
                                     </div>
                                     <div className="post-options">

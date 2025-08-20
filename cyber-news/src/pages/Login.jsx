@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
+import { useAuth } from '../contexts/AuthContext';
 import './Login.css';
 
 const Login = () => {
@@ -10,6 +11,7 @@ const Login = () => {
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const { login } = useAuth();
     const [fieldErrors, setFieldErrors] = useState({});
     const navigate = useNavigate();
 
@@ -49,7 +51,7 @@ const Login = () => {
         setFieldErrors({});
 
         try {
-            await authService.login(formData);
+            await login(formData);
 
             navigate('/feed', { replace: true });
 

@@ -1,31 +1,45 @@
 import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { Shield, AlertTriangle, Clock, User, LogOut, RefreshCw, ExternalLink } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/apiService';
 import './Profile.css';
 
 const Profile = () => {
-    const { user, logout, loading: authLoading } = useAuth();
+    const { userId } = useParams();
+    const { logout, loading: authLoading } = useAuth();
+    const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [userNews, setUserNews] = useState([]);
 
     useEffect(() => {
-        if (!authLoading && user) {
+        if (!authLoading) {
+            fetchUserProfile();
             fetchUserNews();
-        } else if (!authLoading && !user) {
-            setLoading(false);
         }
-    }, [authLoading, user]);
+    }, [authLoading, userId]);
 
-    const fetchUserNews = async () => {
-        if (!user) return;
-
+    const fetchUserProfile = async () => {
         try {
             setLoading(true);
             setError('');
-            console.log(user);
-            const data = await apiService.get(`/news/${user.id}`);
+            const data = await apiService.get(`/user/${userId}`);
+            setUser(data);
+        } catch (err) {
+            setError('Failed to load user profile. Please try again.');
+            console.error('Failed to fetch user profile:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchUserNews = async () => {
+        if (!userId) return;
+        try {
+            setLoading(true);
+            setError('');
+            const data = await apiService.get(`/news/${userId}`);
             setUserNews(data);
         } catch (err) {
             setError('Failed to load user news. Please try again.');
@@ -121,10 +135,10 @@ const Profile = () => {
                 {/* Stats Cards */}
                 <div className="stats-grid">
                     {['Critical', 'High', 'Medium', 'Low'].map(severity => {
-                        const count = userNews.filter(item => item.severity.toLowerCase() === severity.toLowerCase()).length;
+                        const count = userNews.filter(item => item.severity.toLowerCase() === severity?.toLowerCase()).length;
 
                         return (
-                            <div key={severity} className={`stats-card ${severity.toLowerCase()}`}>
+                            <div key={severity} className={`stats-card ${severity?.toLowerCase()}`}>
                                 <div className="stats-card-content">
                                     <div className="stats-card-info">
                                         <div className="stats-count">{count}</div>
@@ -184,7 +198,7 @@ const Profile = () => {
                                             <div className="cve-meta">
                                                 <div className="cve-meta-item">
                                                     <Clock className="w-4 h-4" />
-                                                    <span>{formatDate(cve.createdAt)}</span>
+                                                    <span>{formatDate(cve.createdDate)}</span>
                                                 </div>
                                                 {cve.affectedSystems && (
                                                     <div className="cve-meta-item">

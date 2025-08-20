@@ -95,7 +95,6 @@
     gap: 1rem;
 }
 
-.refresh-button,
 .logout-button {
     padding: 8px 16px;
     border: none;
@@ -107,20 +106,6 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-}
-
-.refresh-button {
-    background-color: #007bff;
-    color: white;
-}
-
-.refresh-button:hover {
-    background-color: #0056b3;
-}
-
-.refresh-button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
 }
 
 .logout-button {
