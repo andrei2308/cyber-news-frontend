@@ -294,7 +294,53 @@
     font-weight: 400;
 }
 
-/* Responsive Design */
+.profile-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    background-color: #28a745;
+    color: white;
+}
+
+.profile-btn:hover {
+    background-color: #1e7e34;
+}
+
+.clickable {
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.clickable:hover {
+    opacity: 0.8;
+}
+
+.author-name.clickable:hover {
+    text-decoration: underline;
+}
+
+.author-avatar.clickable:hover {
+    transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+    .header-actions {
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .profile-btn,
+    .logout-btn {
+        flex: 1;
+        min-width: 100px;
+    }
+}
+
 @media (max-width: 768px) {
     .header-content {
         padding: 0 1rem;

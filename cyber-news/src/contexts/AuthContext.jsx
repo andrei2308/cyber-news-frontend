@@ -62,22 +62,17 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (credentials) => {
         try {
-            setLoading(true);
             const response = await authService.login(credentials);
-
             const userData = {
                 username: response.username,
                 id: response.id,
                 tokenType: response.tokenType
             };
-
             setUser(userData);
             return response;
         } catch (error) {
             console.error('Login failed:', error);
             throw error;
-        } finally {
-            setLoading(false);
         }
     };
 
