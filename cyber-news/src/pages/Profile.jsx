@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Shield, AlertTriangle, Clock, User, LogOut, RefreshCw, ExternalLink, Plus, X } from 'lucide-react';
+import { Shield, AlertTriangle, Clock, User, LogOut, RefreshCw, ExternalLink, Plus, X, FileStack } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/apiService';
 import './Profile.css';
@@ -63,6 +63,10 @@ const Profile = () => {
 
     const handleCreatePost = () => {
         setShowCreateModal(true);
+    };
+
+    const handleGoToFeed = () => {
+        window.location.href = '/feed';
     };
 
     const handleCloseModal = () => {
@@ -184,6 +188,14 @@ const Profile = () => {
                             </button>
                         )}
                         <button
+                            onClick={handleGoToFeed}
+                            className="feed-button"
+                        >
+                            <FileStack className="w-4 h-4" />
+                            <span>Go to feed</span>
+                        </button>
+
+                        <button
                             onClick={logout}
                             className="logout-button"
                         >
@@ -192,145 +204,147 @@ const Profile = () => {
                         </button>
                     </div>
                 </div>
-            </header>
+            </header >
 
             {/* Create Post Modal */}
-            {showCreateModal && (
-                <div className="modal-overlay" onClick={handleCloseModal}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h3>Create New CVE Post</h3>
-                            <button
-                                onClick={handleCloseModal}
-                                className="modal-close-button"
-                                type="button"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleSubmitPost} className="create-post-form">
-                            {/* Title */}
-                            <div className="form-group">
-                                <label htmlFor="title" className="form-label">
-                                    Title <span className="required">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    id="title"
-                                    name="title"
-                                    value={createForm.title}
-                                    onChange={handleInputChange}
-                                    className="form-input"
-                                    placeholder="Enter CVE title..."
-                                    autoComplete="off"
-                                    required
-                                />
-                            </div>
-
-                            {/* Description */}
-                            <div className="form-group">
-                                <label htmlFor="description" className="form-label">
-                                    Description <span className="required">*</span>
-                                </label>
-                                <textarea
-                                    id="description"
-                                    name="description"
-                                    value={createForm.description}
-                                    onChange={handleInputChange}
-                                    className="form-textarea"
-                                    placeholder="Describe the vulnerability..."
-                                    rows={4}
-                                    required
-                                />
-                            </div>
-
-                            {/* Severity */}
-                            <div className="form-group">
-                                <label htmlFor="severity" className="form-label">
-                                    Severity Level
-                                </label>
-                                <select
-                                    id="severity"
-                                    name="severity"
-                                    value={createForm.severity}
-                                    onChange={handleInputChange}
-                                    className="form-select"
-                                >
-                                    <option value="LOW">Low</option>
-                                    <option value="MEDIUM">Medium</option>
-                                    <option value="HIGH">High</option>
-                                    <option value="CRITICAL">Critical</option>
-                                </select>
-                            </div>
-
-                            {/* Score */}
-                            <div className="form-group">
-                                <label htmlFor="score" className="form-label">
-                                    CVSS Score (0-10)
-                                </label>
-                                <input
-                                    type="number"
-                                    id="score"
-                                    name="score"
-                                    value={createForm.score}
-                                    onChange={handleInputChange}
-                                    className="form-input"
-                                    min="0"
-                                    max="10"
-                                    step="0.1"
-                                    placeholder="0.0"
-                                    autoComplete="off"
-                                />
-                            </div>
-
-                            {/* Affected Systems */}
-                            <div className="form-group">
-                                <label htmlFor="affectedSystems" className="form-label">
-                                    Affected Systems
-                                </label>
-                                <input
-                                    type="text"
-                                    id="affectedSystems"
-                                    name="affectedSystems"
-                                    value={createForm.affectedSystems}
-                                    onChange={handleInputChange}
-                                    className="form-input"
-                                    placeholder="e.g., Windows 10, Apache 2.4, MySQL 8.0"
-                                    autoComplete="off"
-                                />
-                            </div>
-
-                            {/* Error Message */}
-                            {error && (
-                                <div className="modal-error-message">
-                                    <AlertTriangle className="w-4 h-4" />
-                                    <span>{error}</span>
-                                </div>
-                            )}
-
-                            {/* Form Actions */}
-                            <div className="form-actions">
+            {
+                showCreateModal && (
+                    <div className="modal-overlay" onClick={handleCloseModal}>
+                        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <h3>Create New CVE Post</h3>
                                 <button
-                                    type="button"
                                     onClick={handleCloseModal}
-                                    className="cancel-button"
-                                    disabled={submitting}
+                                    className="modal-close-button"
+                                    type="button"
                                 >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="submit-button"
-                                    disabled={submitting}
-                                >
-                                    {submitting ? 'Creating...' : 'Create Post'}
+                                    <X className="w-5 h-5" />
                                 </button>
                             </div>
-                        </form>
+
+                            <form onSubmit={handleSubmitPost} className="create-post-form">
+                                {/* Title */}
+                                <div className="form-group">
+                                    <label htmlFor="title" className="form-label">
+                                        Title <span className="required">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="title"
+                                        name="title"
+                                        value={createForm.title}
+                                        onChange={handleInputChange}
+                                        className="form-input"
+                                        placeholder="Enter CVE title..."
+                                        autoComplete="off"
+                                        required
+                                    />
+                                </div>
+
+                                {/* Description */}
+                                <div className="form-group">
+                                    <label htmlFor="description" className="form-label">
+                                        Description <span className="required">*</span>
+                                    </label>
+                                    <textarea
+                                        id="description"
+                                        name="description"
+                                        value={createForm.description}
+                                        onChange={handleInputChange}
+                                        className="form-textarea"
+                                        placeholder="Describe the vulnerability..."
+                                        rows={4}
+                                        required
+                                    />
+                                </div>
+
+                                {/* Severity */}
+                                <div className="form-group">
+                                    <label htmlFor="severity" className="form-label">
+                                        Severity Level
+                                    </label>
+                                    <select
+                                        id="severity"
+                                        name="severity"
+                                        value={createForm.severity}
+                                        onChange={handleInputChange}
+                                        className="form-select"
+                                    >
+                                        <option value="LOW">Low</option>
+                                        <option value="MEDIUM">Medium</option>
+                                        <option value="HIGH">High</option>
+                                        <option value="CRITICAL">Critical</option>
+                                    </select>
+                                </div>
+
+                                {/* Score */}
+                                <div className="form-group">
+                                    <label htmlFor="score" className="form-label">
+                                        CVSS Score (0-10)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        id="score"
+                                        name="score"
+                                        value={createForm.score}
+                                        onChange={handleInputChange}
+                                        className="form-input"
+                                        min="0"
+                                        max="10"
+                                        step="0.1"
+                                        placeholder="0.0"
+                                        autoComplete="off"
+                                    />
+                                </div>
+
+                                {/* Affected Systems */}
+                                <div className="form-group">
+                                    <label htmlFor="affectedSystems" className="form-label">
+                                        Affected Systems
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="affectedSystems"
+                                        name="affectedSystems"
+                                        value={createForm.affectedSystems}
+                                        onChange={handleInputChange}
+                                        className="form-input"
+                                        placeholder="e.g., Windows 10, Apache 2.4, MySQL 8.0"
+                                        autoComplete="off"
+                                    />
+                                </div>
+
+                                {/* Error Message */}
+                                {error && (
+                                    <div className="modal-error-message">
+                                        <AlertTriangle className="w-4 h-4" />
+                                        <span>{error}</span>
+                                    </div>
+                                )}
+
+                                {/* Form Actions */}
+                                <div className="form-actions">
+                                    <button
+                                        type="button"
+                                        onClick={handleCloseModal}
+                                        className="cancel-button"
+                                        disabled={submitting}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="submit-button"
+                                        disabled={submitting}
+                                    >
+                                        {submitting ? 'Creating...' : 'Create Post'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             <div className="profile-content">
                 {/* User Profile Section */}
@@ -441,7 +455,7 @@ const Profile = () => {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 
