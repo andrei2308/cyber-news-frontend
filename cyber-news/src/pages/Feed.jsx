@@ -89,7 +89,7 @@ const Feed = () => {
         <div className="feed-container">
             <header className="feed-header">
                 <div className="header-content">
-                    <h1>CVE Security Feed</h1>
+                    <h1>CVE security feed</h1>
                     <div className="header-actions">
                         <span className="welcome-text">Welcome, {user?.username}</span>
                         <button onClick={handleProfileClick} className="profile-btn">

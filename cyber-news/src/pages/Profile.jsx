@@ -1,17 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Shield, AlertTriangle, Clock, User, LogOut, RefreshCw, ExternalLink } from 'lucide-react';
+import { Shield, AlertTriangle, Clock, User, LogOut, RefreshCw, ExternalLink, Plus, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/apiService';
 import './Profile.css';
 
 const Profile = () => {
     const { userId } = useParams();
-    const { logout, loading: authLoading } = useAuth();
+    const { logout, loading: authLoading, user: currentUser } = useAuth();
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [userNews, setUserNews] = useState([]);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [createForm, setCreateForm] = useState({
+        description: '',
+        title: '',
+        severity: 'LOW',
+        affectedSystems: '',
+        score: ''
+    });
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         if (!authLoading) {
@@ -19,6 +28,9 @@ const Profile = () => {
             fetchUserNews();
         }
     }, [authLoading, userId]);
+
+    // Check if this is the current user's own profile
+    const isOwnProfile = currentUser && user && (currentUser.id === user.id || currentUser.id === userId);
 
     const fetchUserProfile = async () => {
         try {
@@ -46,6 +58,66 @@ const Profile = () => {
             console.error('Failed to fetch user news:', err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleCreatePost = () => {
+        setShowCreateModal(true);
+    };
+
+    const handleCloseModal = () => {
+        setShowCreateModal(false);
+        setCreateForm({
+            description: '',
+            title: '',
+            severity: 'LOW',
+            affectedSystems: '',
+            score: ''
+        });
+        setError('');
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value, type } = e.target;
+        setCreateForm(prev => ({
+            ...prev,
+            [name]: type === 'number' ? value : value
+        }));
+    };
+
+    const handleSubmitPost = async (e) => {
+        e.preventDefault();
+
+        if (!createForm.title.trim() || !createForm.description.trim()) {
+            setError('Title and description are required.');
+            return;
+        }
+
+        if (createForm.score < 0 || createForm.score > 10) {
+            setError('Score must be between 0 and 10.');
+            return;
+        }
+
+        try {
+            setSubmitting(true);
+            setError('');
+
+            const postData = {
+                ...createForm,
+                score: Number(createForm.score)
+            };
+
+            await apiService.post(`/user/${currentUser.id}/create-news`, postData);
+
+            await fetchUserNews();
+
+            handleCloseModal();
+
+        } catch (err) {
+            setError('Failed to create post. Please try again.');
+            console.error('Failed to create post:', err);
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -100,6 +172,17 @@ const Profile = () => {
                         </div>
                     </div>
                     <div className="header-actions">
+                        {/* Create Post Button - Only show if viewing own profile */}
+                        {isOwnProfile && (
+                            <button
+                                onClick={handleCreatePost}
+                                className="create-post-button centered"
+                                title="Create new post"
+                            >
+                                <Plus className="w-4 h-4" />
+                                <span>Create post</span>
+                            </button>
+                        )}
                         <button
                             onClick={logout}
                             className="logout-button"
@@ -110,6 +193,144 @@ const Profile = () => {
                     </div>
                 </div>
             </header>
+
+            {/* Create Post Modal */}
+            {showCreateModal && (
+                <div className="modal-overlay" onClick={handleCloseModal}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>Create New CVE Post</h3>
+                            <button
+                                onClick={handleCloseModal}
+                                className="modal-close-button"
+                                type="button"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSubmitPost} className="create-post-form">
+                            {/* Title */}
+                            <div className="form-group">
+                                <label htmlFor="title" className="form-label">
+                                    Title <span className="required">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    id="title"
+                                    name="title"
+                                    value={createForm.title}
+                                    onChange={handleInputChange}
+                                    className="form-input"
+                                    placeholder="Enter CVE title..."
+                                    autoComplete="off"
+                                    required
+                                />
+                            </div>
+
+                            {/* Description */}
+                            <div className="form-group">
+                                <label htmlFor="description" className="form-label">
+                                    Description <span className="required">*</span>
+                                </label>
+                                <textarea
+                                    id="description"
+                                    name="description"
+                                    value={createForm.description}
+                                    onChange={handleInputChange}
+                                    className="form-textarea"
+                                    placeholder="Describe the vulnerability..."
+                                    rows={4}
+                                    required
+                                />
+                            </div>
+
+                            {/* Severity */}
+                            <div className="form-group">
+                                <label htmlFor="severity" className="form-label">
+                                    Severity Level
+                                </label>
+                                <select
+                                    id="severity"
+                                    name="severity"
+                                    value={createForm.severity}
+                                    onChange={handleInputChange}
+                                    className="form-select"
+                                >
+                                    <option value="LOW">Low</option>
+                                    <option value="MEDIUM">Medium</option>
+                                    <option value="HIGH">High</option>
+                                    <option value="CRITICAL">Critical</option>
+                                </select>
+                            </div>
+
+                            {/* Score */}
+                            <div className="form-group">
+                                <label htmlFor="score" className="form-label">
+                                    CVSS Score (0-10)
+                                </label>
+                                <input
+                                    type="number"
+                                    id="score"
+                                    name="score"
+                                    value={createForm.score}
+                                    onChange={handleInputChange}
+                                    className="form-input"
+                                    min="0"
+                                    max="10"
+                                    step="0.1"
+                                    placeholder="0.0"
+                                    autoComplete="off"
+                                />
+                            </div>
+
+                            {/* Affected Systems */}
+                            <div className="form-group">
+                                <label htmlFor="affectedSystems" className="form-label">
+                                    Affected Systems
+                                </label>
+                                <input
+                                    type="text"
+                                    id="affectedSystems"
+                                    name="affectedSystems"
+                                    value={createForm.affectedSystems}
+                                    onChange={handleInputChange}
+                                    className="form-input"
+                                    placeholder="e.g., Windows 10, Apache 2.4, MySQL 8.0"
+                                    autoComplete="off"
+                                />
+                            </div>
+
+                            {/* Error Message */}
+                            {error && (
+                                <div className="modal-error-message">
+                                    <AlertTriangle className="w-4 h-4" />
+                                    <span>{error}</span>
+                                </div>
+                            )}
+
+                            {/* Form Actions */}
+                            <div className="form-actions">
+                                <button
+                                    type="button"
+                                    onClick={handleCloseModal}
+                                    className="cancel-button"
+                                    disabled={submitting}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="submit-button"
+                                    disabled={submitting}
+                                >
+                                    {submitting ? 'Creating...' : 'Create Post'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             <div className="profile-content">
                 {/* User Profile Section */}
@@ -181,7 +402,7 @@ const Profile = () => {
                                         <div className="cve-main">
                                             <div className="cve-badges">
                                                 <span className="cve-id">
-                                                    {cve.cveId}
+                                                    {cve.id}
                                                 </span>
                                                 <span className={`severity-badge ${getSeverityColor(cve.severity)}`}>
                                                     {cve.severity}
