@@ -157,8 +157,8 @@ const Feed = () => {
 
                                 <div className="post-footer">
                                     <div className="post-stats">
-                                        <span className="stat-item">🔍 Security Alert</span>
-                                        <span className="stat-item">CVE Report</span>
+                                        <span className="stat-item">🔍 Security alert</span>
+                                        <span className="stat-item">CVE report</span>
                                     </div>
                                 </div>
                             </div>

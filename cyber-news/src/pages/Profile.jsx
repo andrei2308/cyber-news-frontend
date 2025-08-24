@@ -171,8 +171,7 @@ const Profile = () => {
                             <Shield className="w-6 h-6" />
                         </div>
                         <div className="brand-text">
-                            <h1>Security Dashboard</h1>
-                            <p>CVE Monitoring & Analysis</p>
+                            <h1>Security dashboard profile</h1>
                         </div>
                     </div>
                     <div className="header-actions">
@@ -212,7 +211,7 @@ const Profile = () => {
                     <div className="modal-overlay" onClick={handleCloseModal}>
                         <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                             <div className="modal-header">
-                                <h3>Create New CVE Post</h3>
+                                <h3>Create new CVE post</h3>
                                 <button
                                     onClick={handleCloseModal}
                                     className="modal-close-button"
@@ -261,7 +260,7 @@ const Profile = () => {
                                 {/* Severity */}
                                 <div className="form-group">
                                     <label htmlFor="severity" className="form-label">
-                                        Severity Level
+                                        Severity Level <span className="required">*</span>
                                     </label>
                                     <select
                                         id="severity"
@@ -269,6 +268,7 @@ const Profile = () => {
                                         value={createForm.severity}
                                         onChange={handleInputChange}
                                         className="form-select"
+                                        required
                                     >
                                         <option value="LOW">Low</option>
                                         <option value="MEDIUM">Medium</option>
@@ -280,7 +280,7 @@ const Profile = () => {
                                 {/* Score */}
                                 <div className="form-group">
                                     <label htmlFor="score" className="form-label">
-                                        CVSS Score (0-10)
+                                        CVSS Score (0-10) <span className="required">*</span>
                                     </label>
                                     <input
                                         type="number"
@@ -294,13 +294,14 @@ const Profile = () => {
                                         step="0.1"
                                         placeholder="0.0"
                                         autoComplete="off"
+                                        required
                                     />
                                 </div>
 
                                 {/* Affected Systems */}
                                 <div className="form-group">
                                     <label htmlFor="affectedSystems" className="form-label">
-                                        Affected Systems
+                                        Affected Systems <span className="required">*</span>
                                     </label>
                                     <input
                                         type="text"
@@ -311,6 +312,7 @@ const Profile = () => {
                                         className="form-input"
                                         placeholder="e.g., Windows 10, Apache 2.4, MySQL 8.0"
                                         autoComplete="off"
+                                        required
                                     />
                                 </div>
 
