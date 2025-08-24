@@ -1,3 +1,4 @@
+/* Severity badges */
 .severity-badge {
     padding: 4px 8px;
     border-radius: 12px;
@@ -28,6 +29,7 @@
     color: white;
 }
 
+/* Feed Container*/
 .feed-container {
     height: 100vh;
     width: 100vw;
@@ -38,6 +40,7 @@
     overflow-y: auto;
 }
 
+/* Feed Header */
 .feed-header {
     background: rgb(119, 214, 95);
     border-bottom: 1px solid #e0e0e0;
@@ -75,9 +78,7 @@
     font-weight: 500;
 }
 
-.refresh-btn,
-.logout-btn,
-.retry-btn {
+.profile-btn {
     padding: 8px 16px;
     border: none;
     border-radius: 6px;
@@ -85,18 +86,22 @@
     font-weight: 500;
     cursor: pointer;
     transition: background-color 0.2s ease;
-}
-
-.refresh-btn {
-    background-color: #007bff;
+    background: linear-gradient(135deg, #1877f2, #42a5f5);
     color: white;
 }
 
-.refresh-btn:hover {
-    background-color: #0056b3;
+.profile-btn:hover {
+    background-color: #1e7e34;
 }
 
 .logout-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
     background-color: #6c757d;
     color: white;
 }
@@ -106,6 +111,13 @@
 }
 
 .retry-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
     background-color: #28a745;
     color: white;
 }
@@ -114,10 +126,12 @@
     background-color: #1e7e34;
 }
 
+/* Feed Content */
 .feed-content {
     padding: 2rem 1rem;
 }
 
+/* Loading States */
 .loading-container {
     display: flex;
     flex-direction: column;
@@ -137,16 +151,7 @@
     margin-bottom: 1rem;
 }
 
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
+/* Error Banner */
 .error-banner {
     background-color: #f8d7da;
     color: #721c24;
@@ -159,6 +164,7 @@
     align-items: center;
 }
 
+/* Empty State */
 .empty-state {
     text-align: center;
     padding: 4rem 2rem;
@@ -170,26 +176,13 @@
     color: #333;
 }
 
+/* CVE Grid and Cards */
 .cve-grid {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
     max-width: 600px;
     margin: 0 auto;
-}
-
-.cve-card {
-    background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e0e0e0;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.cve-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .cve-card {
@@ -294,22 +287,6 @@
     font-weight: 400;
 }
 
-.profile-btn {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    background-color: #28a745;
-    color: white;
-}
-
-.profile-btn:hover {
-    background-color: #1e7e34;
-}
-
 .clickable {
     cursor: pointer;
     transition: opacity 0.2s ease;
@@ -327,20 +304,18 @@
     transform: scale(1.05);
 }
 
-@media (max-width: 768px) {
-    .header-actions {
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 0.5rem;
+/* Animations */
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
     }
 
-    .profile-btn,
-    .logout-btn {
-        flex: 1;
-        min-width: 100px;
+    100% {
+        transform: rotate(360deg);
     }
 }
 
+/* Responsive design */
 @media (max-width: 768px) {
     .header-content {
         padding: 0 1rem;
@@ -356,6 +331,12 @@
     .welcome-text {
         order: -1;
         text-align: center;
+    }
+
+    .profile-btn,
+    .logout-btn {
+        flex: 1;
+        min-width: 100px;
     }
 
     .feed-content {
