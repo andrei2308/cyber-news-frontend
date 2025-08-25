@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '../services/authService';
 import { useAuth } from '../contexts/AuthContext';
 import './Login.css';
 
@@ -66,21 +65,26 @@ const Login = () => {
     return (
         <div className="login-container">
             <div className="login-card">
-                <h2>Login</h2>
+                <div className="auth-header">
+                    <h2>Welcome back</h2>
+                    <p>Please sign in to your account</p>
+                </div>
 
                 {error && (
-                    <div className="error-message">
-                        {error}
+                    <div className="error-banner">
+                        <span className="error-icon">⚠</span>
+                        <span className="error-text">{error}</span>
                     </div>
                 )}
 
                 <form onSubmit={handleSubmit} className="login-form">
                     <div className={`form-group ${fieldErrors.username ? 'error' : ''}`}>
-                        <label htmlFor="username">Username</label>
+                        <label htmlFor="username" className="form-label">Username</label>
                         <input
                             type="text"
                             id="username"
                             name="username"
+                            className="form-input"
                             value={formData.username}
                             onChange={handleChange}
                             required
@@ -94,11 +98,12 @@ const Login = () => {
                     </div>
 
                     <div className={`form-group ${fieldErrors.password ? 'error' : ''}`}>
-                        <label htmlFor="password">Password</label>
+                        <label htmlFor="password" className="form-label">Password</label>
                         <input
                             type="password"
                             id="password"
                             name="password"
+                            className="form-input"
                             value={formData.password}
                             onChange={handleChange}
                             required
@@ -111,14 +116,34 @@ const Login = () => {
                         )}
                     </div>
 
-                    <button
-                        type="submit"
-                        disabled={loading || !formData.username || !formData.password}
-                        className="login-button"
-                    >
-                        {loading ? 'Logging in...' : 'Login'}
-                    </button>
+                    <div className="form-actions">
+                        <button
+                            type="submit"
+                            disabled={loading || !formData.username || !formData.password}
+                            className="login-button primary"
+                        >
+                            {loading ? (
+                                <>
+                                    <span className="spinner"></span>
+                                    Signing in...
+                                </>
+                            ) : (
+                                'Sign In'
+                            )}
+                        </button>
+                    </div>
                 </form>
+
+                <div className="auth-divider">
+                    <span>or</span>
+                </div>
+
+                <div className="auth-footer">
+                    <p>Don't have an account?</p>
+                    <a href="/register" className="register-button">
+                        Create account
+                    </a>
+                </div>
             </div>
         </div>
     );
