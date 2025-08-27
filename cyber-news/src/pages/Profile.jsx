@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Shield, AlertTriangle, Clock, User, LogOut, RefreshCw, ExternalLink, Plus, X, FileStack } from 'lucide-react';
+import { Shield, AlertTriangle, Clock, User, LogOut, XCircle, ExternalLink, Plus, X, FileStack, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/apiService';
 import './Profile.css';
@@ -20,7 +20,13 @@ const Profile = () => {
         affectedSystems: '',
         score: ''
     });
+    const [cveVerificationStatus, setCveVerificationStatus] = useState('idle');
+    const [cveVerifying, setCveVerifying] = useState(false);
+    const [verificationTimeout, setVerificationTimeout] = useState(null);
     const [submitting, setSubmitting] = useState(false);
+
+    // CVE ID validation regex
+    const cvePattern = /^CVE-\d{4}-\d{4,}$/i;
 
     useEffect(() => {
         if (!authLoading) {
@@ -29,7 +35,14 @@ const Profile = () => {
         }
     }, [authLoading, userId]);
 
-    // Check if this is the current user's own profile
+    useEffect(() => {
+        return () => {
+            if (verificationTimeout) {
+                clearTimeout(verificationTimeout);
+            }
+        };
+    }, [verificationTimeout]);
+
     const isOwnProfile = currentUser && user && (currentUser.id === user.id || currentUser.id === userId);
 
     const fetchUserProfile = async () => {
@@ -69,6 +82,49 @@ const Profile = () => {
         window.location.href = '/feed';
     };
 
+    const verifyCVE = async (cveId) => {
+        if (!cveId.trim() || !cvePattern.test(cveId.trim())) {
+            setCveVerificationStatus('idle');
+            return;
+        }
+
+        setCveVerifying(true);
+        setCveVerificationStatus('verifying');
+
+        try {
+            const response = await fetch(`https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${encodeURIComponent(cveId.trim())}`);
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const data = await response.json();
+
+            if (data.resultsPerPage && data.resultsPerPage > 0) {
+                setCveVerificationStatus('valid');
+            } else {
+                setCveVerificationStatus('invalid');
+            }
+        } catch (error) {
+            console.error('Error verifying CVE:', error);
+            setCveVerificationStatus('error');
+        } finally {
+            setCveVerifying(false);
+        }
+    };
+
+    const debouncedVerifyCVE = (cveId) => {
+        if (verificationTimeout) {
+            clearTimeout(verificationTimeout);
+        }
+
+        const timeoutId = setTimeout(() => {
+            verifyCVE(cveId);
+        }, 500);
+
+        setVerificationTimeout(timeoutId);
+    };
+
     const handleCloseModal = () => {
         setShowCreateModal(false);
         setCreateForm({
@@ -79,6 +135,14 @@ const Profile = () => {
             score: ''
         });
         setError('');
+        setSubmitting(false);
+
+        setCveVerificationStatus('idle');
+        setCveVerifying(false);
+        if (verificationTimeout) {
+            clearTimeout(verificationTimeout);
+            setVerificationTimeout(null);
+        }
     };
 
     const handleInputChange = (e) => {
@@ -87,18 +151,80 @@ const Profile = () => {
             ...prev,
             [name]: type === 'number' ? value : value
         }));
+
+        if (error) {
+            setError('');
+        }
+
+        if (name === 'title') {
+            if (!value.trim()) {
+                setCveVerificationStatus('idle');
+                if (verificationTimeout) {
+                    clearTimeout(verificationTimeout);
+                }
+            } else {
+                if (!cvePattern.test(value.trim())) {
+                    setCveVerificationStatus('idle');
+                    if (verificationTimeout) {
+                        clearTimeout(verificationTimeout);
+                    }
+                } else {
+                    debouncedVerifyCVE(value);
+                }
+            }
+        }
     };
 
     const handleSubmitPost = async (e) => {
         e.preventDefault();
 
-        if (!createForm.title.trim() || !createForm.description.trim()) {
-            setError('Title and description are required.');
+        if (!createForm.title.trim()) {
+            setError('CVE ID is required.');
+            return;
+        }
+
+        if (!cvePattern.test(createForm.title.trim())) {
+            setError('Please enter a valid CVE ID format (e.g., CVE-2024-1234).');
+            return;
+        }
+
+        if (cveVerificationStatus === 'invalid') {
+            setError('The entered CVE ID does not exist in the NIST database. Please verify the CVE ID is correct.');
+            return;
+        }
+
+        if (cveVerificationStatus === 'error') {
+            setError('Unable to verify CVE ID. Please check your internet connection and try again.');
+            return;
+        }
+
+        if (cveVerificationStatus === 'verifying') {
+            setError('Please wait while we verify the CVE ID.');
+            return;
+        }
+
+        if (cveVerificationStatus !== 'valid') {
+            setError('Please enter a valid CVE ID that exists in the NIST database.');
+            return;
+        }
+
+        if (!createForm.description.trim()) {
+            setError('Description is required.');
+            return;
+        }
+
+        if (!createForm.affectedSystems.trim()) {
+            setError('Affected systems field is required.');
+            return;
+        }
+
+        if (!createForm.score || createForm.score === '') {
+            setError('CVSS Score is required.');
             return;
         }
 
         if (createForm.score < 0 || createForm.score > 10) {
-            setError('Score must be between 0 and 10.');
+            setError('CVSS Score must be between 0 and 10.');
             return;
         }
 
@@ -225,19 +351,46 @@ const Profile = () => {
                                 {/* Title */}
                                 <div className="form-group">
                                     <label htmlFor="title" className="form-label">
-                                        Title <span className="required">*</span>
+                                        CVE ID <span className="required">*</span>
                                     </label>
-                                    <input
-                                        type="text"
-                                        id="title"
-                                        name="title"
-                                        value={createForm.title}
-                                        onChange={handleInputChange}
-                                        className="form-input"
-                                        placeholder="Enter CVE title..."
-                                        autoComplete="off"
-                                        required
-                                    />
+                                    <div className="input-with-verification">
+                                        <input
+                                            type="text"
+                                            id="title"
+                                            name="title"
+                                            value={createForm.title}
+                                            onChange={handleInputChange}
+                                            className={`form-input ${cveVerificationStatus === 'invalid' ? 'input-error' : cveVerificationStatus === 'valid' ? 'input-success' : ''}`}
+                                            placeholder="Enter CVE ID (e.g., CVE-2024-1234)"
+                                            autoComplete="off"
+                                            required
+                                        />
+                                        {cveVerifying && (
+                                            <div className="verification-spinner">
+                                                <div className="spinner"></div>
+                                            </div>
+                                        )}
+                                        {cveVerificationStatus === 'valid' && (
+                                            <div className="verification-success">
+                                                <CheckCircle className="w-5 h-5 text-green-600" />
+                                            </div>
+                                        )}
+                                        {cveVerificationStatus === 'invalid' && (
+                                            <div className="verification-error">
+                                                <XCircle className="w-5 h-5 text-red-600" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    {cveVerificationStatus === 'invalid' && (
+                                        <div className="field-error-message">
+                                            CVE ID not found in NIST database. Please enter a valid CVE ID.
+                                        </div>
+                                    )}
+                                    {cveVerificationStatus === 'error' && (
+                                        <div className="field-error-message">
+                                            Unable to verify CVE ID. Please check your connection and try again.
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Description */}
@@ -337,7 +490,7 @@ const Profile = () => {
                                     <button
                                         type="submit"
                                         className="submit-button"
-                                        disabled={submitting}
+                                        disabled={submitting || cveVerificationStatus !== 'valid'}
                                     >
                                         {submitting ? 'Creating...' : 'Create Post'}
                                     </button>
@@ -446,7 +599,9 @@ const Profile = () => {
                                             </div>
                                         </div>
 
-                                        <button className="view-details-button">
+                                        <button className="view-details-button"
+                                            onClick={() => window.open(`https://www.cve.org/CVERecord?id=${cve.title}`, '_blank')}
+                                        >
                                             <span>View Details</span>
                                             <ExternalLink className="w-4 h-4" />
                                         </button>
