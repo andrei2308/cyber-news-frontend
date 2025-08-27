@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Shield, AlertTriangle, Clock, User, LogOut, XCircle, ExternalLink, Plus, X, FileStack, CheckCircle } from 'lucide-react';
+import { Shield, AlertTriangle, Clock, User, LogOut, XCircle, ExternalLink, Plus, X, FileStack, CheckCircle, Download } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/apiService';
 import './Profile.css';
@@ -14,15 +14,15 @@ const Profile = () => {
     const [userNews, setUserNews] = useState([]);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [createForm, setCreateForm] = useState({
-        description: '',
         title: '',
-        severity: 'LOW',
+        description: '',
+        severity: '',
         affectedSystems: '',
         score: ''
     });
-    const [cveVerificationStatus, setCveVerificationStatus] = useState('idle');
-    const [cveVerifying, setCveVerifying] = useState(false);
-    const [verificationTimeout, setVerificationTimeout] = useState(null);
+    const [cveData, setCveData] = useState(null);
+    const [fetchingCveDetails, setFetchingCveDetails] = useState(false);
+    const [cveDetailsFetched, setCveDetailsFetched] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
     // CVE ID validation regex
@@ -34,14 +34,6 @@ const Profile = () => {
             fetchUserNews();
         }
     }, [authLoading, userId]);
-
-    useEffect(() => {
-        return () => {
-            if (verificationTimeout) {
-                clearTimeout(verificationTimeout);
-            }
-        };
-    }, [verificationTimeout]);
 
     const isOwnProfile = currentUser && user && (currentUser.id === user.id || currentUser.id === userId);
 
@@ -82,96 +74,125 @@ const Profile = () => {
         window.location.href = '/feed';
     };
 
-    const verifyCVE = async (cveId) => {
-        if (!cveId.trim() || !cvePattern.test(cveId.trim())) {
-            setCveVerificationStatus('idle');
+    const handleFetchCveDetails = async () => {
+        if (!createForm.title.trim()) {
+            setError('Please enter a CVE ID first.');
             return;
         }
 
-        setCveVerifying(true);
-        setCveVerificationStatus('verifying');
+        if (!cvePattern.test(createForm.title.trim())) {
+            setError('Please enter a valid CVE ID format (e.g., CVE-2024-1234).');
+            return;
+        }
+
+        setFetchingCveDetails(true);
+        setError('');
+        setCveDetailsFetched(false);
 
         try {
-            const response = await fetch(`https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${encodeURIComponent(cveId.trim())}`);
+            const response = await apiService.get(`/news/details/${encodeURIComponent(createForm.title.trim())}`);
 
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
+            if (response.exists && response.data) {
+                setCveData(response.data);
+                setCveDetailsFetched(true);
 
-            const data = await response.json();
+                console.log('Fetched CVE details:', response.data);
 
-            if (data.resultsPerPage && data.resultsPerPage > 0) {
-                setCveVerificationStatus('valid');
+                setCreateForm(prev => ({
+                    ...prev,
+                    severity: response.data.severity || 'Not specified',
+                    affectedSystems: response.data.affectedSystems || 'Not specified',
+                    score: response.data.score ? String(response.data.score) : 'Not available'
+                }));
+
+            } else if (response.exists === false) {
+                setError('CVE ID not found in NIST database. Please verify the CVE ID is correct.');
+                setCveData(null);
+                setCveDetailsFetched(false);
+
+                setCreateForm(prev => ({
+                    ...prev,
+                    severity: '',
+                    affectedSystems: '',
+                    score: ''
+                }));
+
             } else {
-                setCveVerificationStatus('invalid');
+                setError('Received unexpected response format. Please try again.');
+                console.warn('Unexpected response structure:', response);
+                setCveData(null);
+                setCveDetailsFetched(false);
             }
-        } catch (error) {
-            console.error('Error verifying CVE:', error);
-            setCveVerificationStatus('error');
+
+        } catch (err) {
+            console.error('Error fetching CVE details:', err);
+
+            if (err.message && err.message.includes('404')) {
+                setError('CVE ID not found. Please verify the CVE ID is correct.');
+            } else if (err.message && err.message.includes('500')) {
+                setError('Server error occurred. Please try again later.');
+            } else if (err.message && err.message.includes('Network')) {
+                setError('Network error. Please check your connection and try again.');
+            } else {
+                setError('Failed to fetch CVE details. Please try again.');
+            }
+
+            setCveData(null);
+            setCveDetailsFetched(false);
+
+            setCreateForm(prev => ({
+                ...prev,
+                severity: '',
+                affectedSystems: '',
+                score: ''
+            }));
+
         } finally {
-            setCveVerifying(false);
+            setFetchingCveDetails(false);
         }
-    };
-
-    const debouncedVerifyCVE = (cveId) => {
-        if (verificationTimeout) {
-            clearTimeout(verificationTimeout);
-        }
-
-        const timeoutId = setTimeout(() => {
-            verifyCVE(cveId);
-        }, 500);
-
-        setVerificationTimeout(timeoutId);
     };
 
     const handleCloseModal = () => {
         setShowCreateModal(false);
         setCreateForm({
-            description: '',
             title: '',
-            severity: 'LOW',
+            description: '',
+            severity: '',
             affectedSystems: '',
             score: ''
         });
         setError('');
         setSubmitting(false);
-
-        setCveVerificationStatus('idle');
-        setCveVerifying(false);
-        if (verificationTimeout) {
-            clearTimeout(verificationTimeout);
-            setVerificationTimeout(null);
-        }
+        setCveData(null);
+        setCveDetailsFetched(false);
+        setFetchingCveDetails(false);
     };
 
     const handleInputChange = (e) => {
-        const { name, value, type } = e.target;
+        const { name, value } = e.target;
+
+        if (name !== 'title' && name !== 'description') {
+            return;
+        }
+
         setCreateForm(prev => ({
             ...prev,
-            [name]: type === 'number' ? value : value
+            [name]: value
         }));
 
         if (error) {
             setError('');
         }
 
-        if (name === 'title') {
-            if (!value.trim()) {
-                setCveVerificationStatus('idle');
-                if (verificationTimeout) {
-                    clearTimeout(verificationTimeout);
-                }
-            } else {
-                if (!cvePattern.test(value.trim())) {
-                    setCveVerificationStatus('idle');
-                    if (verificationTimeout) {
-                        clearTimeout(verificationTimeout);
-                    }
-                } else {
-                    debouncedVerifyCVE(value);
-                }
-            }
+        if (name === 'title' && cveDetailsFetched) {
+            setCveDetailsFetched(false);
+            setCveData(null);
+            setCreateForm(prev => ({
+                ...prev,
+                severity: '',
+                affectedSystems: '',
+                score: ''
+            }));
         }
     };
 
@@ -188,43 +209,13 @@ const Profile = () => {
             return;
         }
 
-        if (cveVerificationStatus === 'invalid') {
-            setError('The entered CVE ID does not exist in the NIST database. Please verify the CVE ID is correct.');
-            return;
-        }
-
-        if (cveVerificationStatus === 'error') {
-            setError('Unable to verify CVE ID. Please check your internet connection and try again.');
-            return;
-        }
-
-        if (cveVerificationStatus === 'verifying') {
-            setError('Please wait while we verify the CVE ID.');
-            return;
-        }
-
-        if (cveVerificationStatus !== 'valid') {
-            setError('Please enter a valid CVE ID that exists in the NIST database.');
+        if (!cveDetailsFetched) {
+            setError('Please fetch CVE details before submitting.');
             return;
         }
 
         if (!createForm.description.trim()) {
-            setError('Description is required.');
-            return;
-        }
-
-        if (!createForm.affectedSystems.trim()) {
-            setError('Affected systems field is required.');
-            return;
-        }
-
-        if (!createForm.score || createForm.score === '') {
-            setError('CVSS Score is required.');
-            return;
-        }
-
-        if (createForm.score < 0 || createForm.score > 10) {
-            setError('CVSS Score must be between 0 and 10.');
+            setError('Please add your analysis or opinion about this CVE.');
             return;
         }
 
@@ -233,8 +224,11 @@ const Profile = () => {
             setError('');
 
             const postData = {
-                ...createForm,
-                score: Number(createForm.score)
+                title: createForm.title,
+                description: createForm.description,
+                severity: createForm.severity,
+                affectedSystems: createForm.affectedSystems,
+                score: Number(createForm.score) || 0
             };
 
             await apiService.post(`/user/${currentUser.id}/create-news`, postData);
@@ -329,177 +323,144 @@ const Profile = () => {
                         </button>
                     </div>
                 </div>
-            </header >
+            </header>
 
             {/* Create Post Modal */}
-            {
-                showCreateModal && (
-                    <div className="modal-overlay" onClick={handleCloseModal}>
-                        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                            <div className="modal-header">
-                                <h3>Create new CVE post</h3>
-                                <button
-                                    onClick={handleCloseModal}
-                                    className="modal-close-button"
-                                    type="button"
-                                >
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
+            {showCreateModal && (
+                <div className="modal-overlay" onClick={handleCloseModal}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>Create new CVE post</h3>
+                            <button
+                                onClick={handleCloseModal}
+                                className="modal-close-button"
+                                type="button"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
 
-                            <form onSubmit={handleSubmitPost} className="create-post-form">
-                                {/* Title */}
-                                <div className="form-group">
-                                    <label htmlFor="title" className="form-label">
-                                        CVE ID <span className="required">*</span>
-                                    </label>
-                                    <div className="input-with-verification">
-                                        <input
-                                            type="text"
-                                            id="title"
-                                            name="title"
-                                            value={createForm.title}
-                                            onChange={handleInputChange}
-                                            className={`form-input ${cveVerificationStatus === 'invalid' ? 'input-error' : cveVerificationStatus === 'valid' ? 'input-success' : ''}`}
-                                            placeholder="Enter CVE ID (e.g., CVE-2024-1234)"
-                                            autoComplete="off"
-                                            required
-                                        />
-                                        {cveVerifying && (
-                                            <div className="verification-spinner">
-                                                <div className="spinner"></div>
-                                            </div>
-                                        )}
-                                        {cveVerificationStatus === 'valid' && (
-                                            <div className="verification-success">
-                                                <CheckCircle className="w-5 h-5 text-green-600" />
-                                            </div>
-                                        )}
-                                        {cveVerificationStatus === 'invalid' && (
-                                            <div className="verification-error">
-                                                <XCircle className="w-5 h-5 text-red-600" />
-                                            </div>
-                                        )}
-                                    </div>
-                                    {cveVerificationStatus === 'invalid' && (
-                                        <div className="field-error-message">
-                                            CVE ID not found in NIST database. Please enter a valid CVE ID.
-                                        </div>
-                                    )}
-                                    {cveVerificationStatus === 'error' && (
-                                        <div className="field-error-message">
-                                            Unable to verify CVE ID. Please check your connection and try again.
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Description */}
-                                <div className="form-group">
-                                    <label htmlFor="description" className="form-label">
-                                        Description <span className="required">*</span>
-                                    </label>
-                                    <textarea
-                                        id="description"
-                                        name="description"
-                                        value={createForm.description}
-                                        onChange={handleInputChange}
-                                        className="form-textarea"
-                                        placeholder="Describe the vulnerability..."
-                                        rows={4}
-                                        required
-                                    />
-                                </div>
-
-                                {/* Severity */}
-                                <div className="form-group">
-                                    <label htmlFor="severity" className="form-label">
-                                        Severity Level <span className="required">*</span>
-                                    </label>
-                                    <select
-                                        id="severity"
-                                        name="severity"
-                                        value={createForm.severity}
-                                        onChange={handleInputChange}
-                                        className="form-select"
-                                        required
-                                    >
-                                        <option value="LOW">Low</option>
-                                        <option value="MEDIUM">Medium</option>
-                                        <option value="HIGH">High</option>
-                                        <option value="CRITICAL">Critical</option>
-                                    </select>
-                                </div>
-
-                                {/* Score */}
-                                <div className="form-group">
-                                    <label htmlFor="score" className="form-label">
-                                        CVSS Score (0-10) <span className="required">*</span>
-                                    </label>
-                                    <input
-                                        type="number"
-                                        id="score"
-                                        name="score"
-                                        value={createForm.score}
-                                        onChange={handleInputChange}
-                                        className="form-input"
-                                        min="0"
-                                        max="10"
-                                        step="0.1"
-                                        placeholder="0.0"
-                                        autoComplete="off"
-                                        required
-                                    />
-                                </div>
-
-                                {/* Affected Systems */}
-                                <div className="form-group">
-                                    <label htmlFor="affectedSystems" className="form-label">
-                                        Affected Systems <span className="required">*</span>
-                                    </label>
+                        <form onSubmit={handleSubmitPost} className="create-post-form">
+                            {/* CVE ID Input */}
+                            <div className="form-group">
+                                <label htmlFor="title" className="form-label">
+                                    CVE ID <span className="required">*</span>
+                                </label>
+                                <div className="input-with-button">
                                     <input
                                         type="text"
-                                        id="affectedSystems"
-                                        name="affectedSystems"
-                                        value={createForm.affectedSystems}
+                                        id="title"
+                                        name="title"
+                                        value={createForm.title}
                                         onChange={handleInputChange}
-                                        className="form-input"
-                                        placeholder="e.g., Windows 10, Apache 2.4, MySQL 8.0"
+                                        className={`form-input ${cveDetailsFetched ? 'input-success' : ''
+                                            }`}
+                                        placeholder="Enter CVE ID (e.g., CVE-2024-1234)"
                                         autoComplete="off"
                                         required
                                     />
-                                </div>
-
-                                {/* Error Message */}
-                                {error && (
-                                    <div className="modal-error-message">
-                                        <AlertTriangle className="w-4 h-4" />
-                                        <span>{error}</span>
-                                    </div>
-                                )}
-
-                                {/* Form Actions */}
-                                <div className="form-actions">
                                     <button
                                         type="button"
-                                        onClick={handleCloseModal}
-                                        className="cancel-button"
-                                        disabled={submitting}
+                                        onClick={handleFetchCveDetails}
+                                        className="fetch-button"
+                                        disabled={fetchingCveDetails || !createForm.title.trim()}
                                     >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="submit-button"
-                                        disabled={submitting || cveVerificationStatus !== 'valid'}
-                                    >
-                                        {submitting ? 'Creating...' : 'Create Post'}
+                                        {fetchingCveDetails ? (
+                                            <div className="spinner-small"></div>
+                                        ) : (
+                                            <Download className="w-4 h-4" />
+                                        )}
+                                        <span>
+                                            {fetchingCveDetails ? 'Fetching...' : 'Fetch Details'}
+                                        </span>
                                     </button>
                                 </div>
-                            </form>
-                        </div>
+                                {cveDetailsFetched && (
+                                    <div className="field-success-message">
+                                        <CheckCircle className="w-4 h-4" />
+                                        <span>CVE details fetched successfully</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Auto-populated CVE Details (Read-only) */}
+                            {cveData && cveDetailsFetched && (
+                                <div className="cve-details-section">
+                                    <h4 className="section-title">CVE Details (Auto-populated)</h4>
+
+                                    {/* CVE Details Grid */}
+                                    <div className="cve-details-grid">
+                                        <div className="detail-item">
+                                            <label className="detail-label">Severity</label>
+                                            <div className={`severity-badge ${getSeverityColor(createForm.severity)}`}>
+                                                {createForm.severity || 'Not specified'}
+                                            </div>
+                                        </div>
+
+                                        <div className="detail-item">
+                                            <label className="detail-label">CVSS Score</label>
+                                            <div className="detail-value">
+                                                {createForm.score || 'Not available'}
+                                            </div>
+                                        </div>
+
+                                        <div className="detail-item">
+                                            <label className="detail-label">Affected Systems</label>
+                                            <div className="detail-value">
+                                                {createForm.affectedSystems || 'Not specified'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* User Opinion/Analysis */}
+                            <div className="form-group">
+                                <label htmlFor="description" className="form-label">
+                                    Your Analysis/Opinion <span className="required">*</span>
+                                </label>
+                                <textarea
+                                    id="description"
+                                    name="description"
+                                    value={createForm.description}
+                                    onChange={handleInputChange}
+                                    className="form-textarea"
+                                    placeholder="Share your thoughts, analysis, or recommendations about this CVE..."
+                                    rows={4}
+                                    required
+                                />
+                            </div>
+
+                            {/* Error Message */}
+                            {error && (
+                                <div className="modal-error-message">
+                                    <AlertTriangle className="w-4 h-4" />
+                                    <span>{error}</span>
+                                </div>
+                            )}
+
+                            {/* Form Actions */}
+                            <div className="form-actions">
+                                <button
+                                    type="button"
+                                    onClick={handleCloseModal}
+                                    className="cancel-button"
+                                    disabled={submitting}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="submit-button"
+                                    disabled={submitting || !cveDetailsFetched}
+                                >
+                                    {submitting ? 'Creating...' : 'Create Post'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                )
-            }
+                </div>
+            )}
 
             <div className="profile-content">
                 {/* User Profile Section */}
@@ -612,7 +573,7 @@ const Profile = () => {
                     </div>
                 </div>
             </div>
-        </div >
+        </div>
     );
 };
 

@@ -593,6 +593,56 @@
     border-color: #d1d5db;
 }
 
+.detail-label {
+    color: #1c1e21;
+    font-weight: 600;
+    margin-right: 0.5rem;
+    min-width: 120px;
+    display: inline-block;
+}
+
+.detail-value {
+    color: #65676b;
+    font-weight: 500;
+    word-break: break-word;
+    flex: 1;
+}
+
+.fetch-button {
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #1877f2, #42a5f5);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 2px 4px rgba(24, 119, 242, 0.2);
+    margin-top: 0.5rem;
+}
+
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1c1e21;
+    margin: 1.5rem 0 1rem 0;
+    border-bottom: 1px solid #e4e6ea;
+    padding-bottom: 0.25rem;
+}
+
+.field-success-message {
+    color: #27ae60;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
 .create-post-form {
     padding: 2rem;
 }
