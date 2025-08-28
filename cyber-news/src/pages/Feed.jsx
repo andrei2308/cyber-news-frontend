@@ -158,7 +158,9 @@ const Feed = () => {
                                 <div className="post-footer">
                                     <div className="post-stats">
                                         <span className="stat-item">🔍 Security alert</span>
-                                        <span className="stat-item">CVE report</span>
+                                        <a href={`https://www.cve.org/CVERecord?id=${cve.title}`} target="_blank" rel="noopener noreferrer" className="stat-item link">
+                                            <span className="stat-item" >CVE report</span>
+                                        </a>
                                     </div>
                                 </div>
                             </div>
