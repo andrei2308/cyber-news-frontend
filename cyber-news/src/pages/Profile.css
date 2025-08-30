@@ -232,6 +232,23 @@
     transition: background-color 0.2s ease;
 }
 
+.follow-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #1877f2, #42a5f5);
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-right: 600px;
+}
+
 /* Stats Cards Grid */
 .stats-grid {
     display: grid;
@@ -992,6 +1009,20 @@
     }
 
     .user-stats {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 16px;
+        font-size: 0.9rem;
+    }
+
+    .stats-separator {
+        margin: 0 12px;
+        color: #ff0000;
+        background-color: #007bff;
+    }
+
+    .stats-item {
         text-align: center;
     }
 
@@ -1030,6 +1061,83 @@
     .cve-description {
         font-size: 0.9rem;
     }
+}
+
+.stats-item.clickable {
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.stats-item.clickable:hover {
+    color: #007bff;
+}
+
+.followers-modal {
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.followers-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.follower-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    gap: 12px;
+}
+
+.follower-item:last-child {
+    border-bottom: none;
+}
+
+.follower-avatar {
+    width: 40px;
+    height: 40px;
+    background-color: #f0f0f0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+}
+
+.follower-info {
+    flex: 1;
+}
+
+.follower-name {
+    font-weight: 500;
+    color: #333;
+}
+
+.follower-email {
+    font-size: 0.875rem;
+    color: #666;
+}
+
+.view-profile-button {
+    padding: 6px 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.view-profile-button:hover {
+    background-color: #0056b3;
+}
+
+.empty-followers {
+    text-align: center;
+    padding: 40px;
+    color: #666;
 }
 
 @media (max-width: 640px) {
