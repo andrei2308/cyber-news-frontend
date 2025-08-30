@@ -13,6 +13,8 @@ const Profile = () => {
     const [error, setError] = useState('');
     const [userNews, setUserNews] = useState([]);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showFollowersModal, setShowFollowersModal] = useState(false);
+    const [modalType, setModalType] = useState('');
     const [createForm, setCreateForm] = useState({
         title: '',
         description: '',
@@ -24,6 +26,7 @@ const Profile = () => {
     const [fetchingCveDetails, setFetchingCveDetails] = useState(false);
     const [cveDetailsFetched, setCveDetailsFetched] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [isFollowing, setIsFollowing] = useState(false);
 
     // CVE ID validation regex
     const cvePattern = /^CVE-\d{4}-\d{4,}$/i;
@@ -32,8 +35,16 @@ const Profile = () => {
         if (!authLoading) {
             fetchUserProfile();
             fetchUserNews();
+            setIsFollowing(isFollowing);
         }
     }, [authLoading, userId]);
+
+    useEffect(() => {
+        if (user && user.followers && currentUser) {
+            const isFollowing = user.followers.some(follower => follower.id === currentUser.id);
+            setIsFollowing(isFollowing);
+        }
+    }, [user, currentUser]);
 
     const isOwnProfile = currentUser && user && (currentUser.id === user.id || currentUser.id === userId);
 
@@ -245,6 +256,22 @@ const Profile = () => {
         }
     };
 
+    const handleFollow = async () => {
+        try {
+            if (isFollowing) {
+                await apiService.post(`/user/${user.id}/unfollow`);
+                setIsFollowing(false);
+            } else {
+                await apiService.post(`/user/${user.id}/follow`);
+                setIsFollowing(true);
+            }
+        } catch (err) {
+            setError(`Failed to follow user. ${err.message || 'Please try again.'}`);
+        } finally {
+
+        }
+    }
+
     const formatDate = (dateString) => {
         if (!dateString) return 'No date available';
 
@@ -434,7 +461,6 @@ const Profile = () => {
                             {/* Error Message */}
                             {error && (
                                 <div className="modal-error-message">
-                                    <AlertTriangle className="w-4 h-4" />
                                     <span>{error}</span>
                                 </div>
                             )}
@@ -475,9 +501,84 @@ const Profile = () => {
                                 <p className="user-email">{user.username}</p>
                                 <p className="user-role">{user.role}</p>
                             </div>
+                            {
+                                !isOwnProfile && (
+                                    <div className="user-stats-card">
+                                        <button onClick={handleFollow} className="follow-button">
+                                            {isFollowing ? 'Unfollow' : 'Follow'}
+                                        </button>
+                                    </div>
+                                )
+                            }
                             <div className="user-stats">
-                                <div className="stats-number">{userNews.length}</div>
-                                <div className="stats-label">Active CVEs</div>
+                                <span className="stats-separator"> | </span>
+                                <div className="user-stats">
+                                    <span className="stats-item">
+                                        <span className="stats-number">{userNews.length}</span>
+                                        <span className="stats-label"> Active CVEs</span>
+                                    </span>
+                                    <span className="stats-separator"> | </span>
+                                    <span
+                                        className="stats-item clickable"
+                                        onClick={() => { setModalType('followers'); setShowFollowersModal(true); }}
+                                    >
+                                        <span className="stats-number">{user.followers ? user.followers.length : 0}</span>
+                                        <span className="stats-label"> Followers</span>
+                                    </span>
+                                    <span className="stats-separator"> | </span>
+                                    <span
+                                        className="stats-item clickable"
+                                        onClick={() => { setModalType('following'); setShowFollowersModal(true); }}
+                                    >
+                                        <span className="stats-number">{user.following ? user.following.length : 0}</span>
+                                        <span className="stats-label"> Following</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Followers/Following Modal */}
+                {showFollowersModal && (
+                    <div className="modal-overlay" onClick={() => setShowFollowersModal(false)}>
+                        <div className="modal-content followers-modal" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <h3>{modalType === 'followers' ? 'Followers' : 'Following'}</h3>
+                                <button
+                                    onClick={() => setShowFollowersModal(false)}
+                                    className="modal-close-button"
+                                    type="button"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <div className="followers-list">
+                                {(modalType === 'followers' ? user.followers : user.following)?.map((person) => (
+                                    <div key={person.id} className="follower-item">
+                                        <div className="follower-avatar">
+                                            <User className="w-6 h-6" />
+                                        </div>
+                                        <div className="follower-info">
+                                            <div className="follower-name">{person.username}</div>
+                                            <div className="follower-email">{person.email}</div>
+                                        </div>
+                                        <button
+                                            className="view-profile-button"
+                                            onClick={() => {
+                                                setShowFollowersModal(false);
+                                                window.location.href = `/profile/${person.id}`;
+                                            }}
+                                        >
+                                            View Profile
+                                        </button>
+                                    </div>
+                                )) || (
+                                        <div className="empty-followers">
+                                            <p>No {modalType} yet</p>
+                                        </div>
+                                    )}
                             </div>
                         </div>
                     </div>
@@ -506,7 +607,6 @@ const Profile = () => {
                 {error && (
                     <div className="error-message">
                         <div className="error-content">
-                            <AlertTriangle className="w-5 h-5" />
                             <p>{error}</p>
                         </div>
                     </div>
@@ -532,7 +632,7 @@ const Profile = () => {
                                         <div className="cve-main">
                                             <div className="cve-badges">
                                                 <span className="cve-id">
-                                                    {cve.id}
+                                                    {cve.title}
                                                 </span>
                                                 <span className={`severity-badge ${getSeverityColor(cve.severity)}`}>
                                                     {cve.severity}
@@ -543,7 +643,6 @@ const Profile = () => {
                                                     </span>
                                                 )}
                                             </div>
-                                            <h4 className="cve-title">{cve.title}</h4>
                                             <p className="cve-description">{cve.description}</p>
 
                                             <div className="cve-meta">
